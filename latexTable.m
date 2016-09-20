@@ -141,25 +141,45 @@ if ~isfield(input,'makeCompleteLatexDocument'),input.makeCompleteLatexDocument =
 
 % process table datatype
 if isa(input.data,'table')
-  if(~isempty(input.data.Properties.RowNames))
-    input.tableRowLabels = input.data.Properties.RowNames';
-  end
-  if(~isempty(input.data.Properties.VariableNames))
-    input.tableColLabels = input.data.Properties.VariableNames';
-  end
-    input.data = table2array(input.data);
+    if(~isempty(input.data.Properties.RowNames))
+        input.tableRowLabels = input.data.Properties.RowNames';
+    end
+    if(~isempty(input.data.Properties.VariableNames))
+        input.tableColLabels = input.data.Properties.VariableNames';
+    end
+        input.dataCell = table2cell(input.data);
+else
+    input.dataCell = num2cell(input.data);
 end
 
 % get size of data
-numberDataRows = size(input.data,1);
-numberDataCols = size(input.data,2);
+numberDataRows = size(input.dataCell,1);
+numberDataCols = size(input.dataCell,2);
+% loop through T and get sizes of entries
+% add it all up to get numberDataRows and numberDataCols
+
+
+
+%{
+subcolumn_list = [];
+for i=1:length(T.Properties.VariableNames)
+    subcolumns = size(T{:,i},2);
+    if subcolumns > 1
+        disp(['\multicolumn{',num2str(subcolumns),'}{|c|}{',T.Properties.VariableNames(i),'}'])
+    else
+        disp(T.Properties.VariableNames(i))
+    end
+    subcolumn_list = [subcolumn_list, subcolumn];
+    total_columns = sum(subcolumn_list);
+end
+%}
 
 % obtain cell array for the table data and labels
 colLabelsExist = isfield(input,'tableColLabels');
 rowLabelsExist = isfield(input,'tableRowLabels');
 cellSize = [numberDataRows+colLabelsExist,numberDataCols+rowLabelsExist];
 C = cell(cellSize);
-C(1+colLabelsExist:end,1+rowLabelsExist:end) = num2cell(input.data);
+C(1+colLabelsExist:end,1+rowLabelsExist:end) = input.dataCell;
 if rowLabelsExist
     C(1+colLabelsExist:end,1)=input.tableRowLabels';
 end
@@ -183,7 +203,7 @@ else
         tmp = repmat(dataFormatList,1,numberDataCols);
     end
 end
-if ~isequal(size(tmp),size(input.data))
+if ~isequal(size(tmp),size(input.dataCell))
     error(['Please check your values in input.dataFormat:'...
         'The sum of the numbers of fields must match the number of columns OR rows '...
         '(depending on input.dataFormatMode)!']);
